@@ -1,21 +1,21 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
+	"context"
 	"log"
 	"math/rand"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	uuid "github.com/satori/go.uuid"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type product struct {
 	ID       string
 	Name     string
 	Desc     string
-	Quantity uint
+	Quantity int
 }
 
 func ExitOnError(err error) {
@@ -83,26 +83,34 @@ func main() {
 		"Oh my, this one definetely shines.",
 		"Buy it now. The shine can be seen from a mile away.",
 	}
-	db, err := sql.Open("mysql", "cyrus:123456789@/hypetech?charset=utf8")
-	ExitOnError(err)
-	stmt, err := db.Prepare("INSERT INTO products (pid,pname,pdesc,quantity) VALUES(?,?,?,?)")
-	ExitOnError(err)
+
+	ctx, _ := context.WithTimeout(context.Background(), 120*time.Second)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Check the connection
+	err = client.Ping(ctx, nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-	for i := 0; i < 50; i++ {
-		id := uuid.Must(uuid.NewV4())
-		name := colors[r1.Int()%13] + " - " + items[r1.Int()%7]
-		desc := desc1[rand.Int()%4] + " " + desc2[rand.Int()%5] + " " + desc3[rand.Int()%9] + " " + desc4[rand.Int()%6]
-		qnt := rand.Int() % 120
-		for i := 0; i < 10; i++ {
-			_, err := stmt.Exec(id.String(),
-				name,
-				desc,
-				qnt)
-			if err == nil {
-				fmt.Println(id.String())
-				break
-			}
+	collection := client.Database("hypetech").Collection("products")
+	var data []interface{}
+	for x := 0; x < 10; x++ {
+		for i := 0; i < 1000*100; i++ {
+			id := uuid.Must(uuid.NewV4())
+			name := colors[r1.Int()%13] + " - " + items[r1.Int()%7]
+			desc := desc1[rand.Int()%4] + " " + desc2[rand.Int()%5] + " " + desc3[rand.Int()%9] + " " + desc4[rand.Int()%6]
+			qnt := rand.Int() % 120
+			data = append(data, product{id.String(), name, desc, qnt})
 		}
+		collection.InsertMany(ctx, data)
+		log.Println("Run", x)
 	}
+
 }
