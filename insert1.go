@@ -1,14 +1,14 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	uuid "github.com/satori/go.uuid"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type product struct {
@@ -23,6 +23,8 @@ func ExitOnError(err error) {
 		log.Fatalln(err)
 	}
 }
+
+var flag bool = false
 
 func main() {
 	colors := [13]string{
@@ -83,34 +85,34 @@ func main() {
 		"Oh my, this one definetely shines.",
 		"Buy it now. The shine can be seen from a mile away.",
 	}
-
-	ctx, _ := context.WithTimeout(context.Background(), 120*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Check the connection
-	err = client.Ping(ctx, nil)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-	collection := client.Database("hypetech").Collection("products")
-	var data []interface{}
-	for x := 0; x < 10; x++ {
-		for i := 0; i < 1000*100; i++ {
-			id := uuid.Must(uuid.NewV4())
-			name := colors[r1.Int()%13] + " - " + items[r1.Int()%7]
-			desc := desc1[rand.Int()%4] + " " + desc2[rand.Int()%5] + " " + desc3[rand.Int()%9] + " " + desc4[rand.Int()%6]
-			qnt := rand.Int() % 120
-			data = append(data, product{id.String(), name, desc, qnt})
-		}
-		collection.InsertMany(ctx, data)
-		log.Println("Run", x)
+	dbHandler := os.Getenv("DB_HANDLER")
+	if dbHandler == "" {
+		log.Fatalln("No db handler")
 	}
+	log.Println(dbHandler)
+	db, err := sql.Open("mysql", dbHandler)
+	ExitOnError(err)
+	stmt, err := db.Prepare("INSERT into products (pserial,pname,pdesc,quantity) VALUES(?,?,?,?)")
+	ExitOnError(err)
+	go logger()
+	for i := 0; i < 50*1000; i++ {
+		id := uuid.Must(uuid.NewV4()).String()
+		name := colors[r1.Int()%13] + " - " + items[r1.Int()%7]
+		desc := desc1[rand.Int()%4] + " " + desc2[rand.Int()%5] + " " + desc3[rand.Int()%9] + " " + desc4[rand.Int()%6]
+		qnt := rand.Int() % 120
+		stmt.Exec(id, name, desc, qnt)
+	}
+	flag = true
+}
 
+func logger() {
+	for {
+		log.Println(" ")
+		time.Sleep(1 * time.Second)
+		if flag {
+			break
+		}
+	}
 }

@@ -8,6 +8,8 @@ var mux *http.ServeMux
 
 func init() {
 	mux = http.NewServeMux()
+	fs := http.FileServer(http.Dir("js"))
+	mux.Handle("/js/", http.StripPrefix("/js/", fs))
 }
 
 /*

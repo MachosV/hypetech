@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "api"
+	"data"
 	"log"
 	"mux"
 	_ "mux"
@@ -15,6 +17,7 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
+		data.GetDbHandler().Close()
 		log.Println("Signal received, terminating")
 		os.Exit(1)
 	}()

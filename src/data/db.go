@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"os"
 	"utils/apperrors"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var db *sql.DB
