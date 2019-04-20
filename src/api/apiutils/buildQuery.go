@@ -20,6 +20,8 @@ func BuildQuery(direction, pivot, offsetBegin, offsetEnd string) string {
 			qb.WriteString(pivot)
 			qb.WriteString(" > ")
 			qb.WriteString(offsetEnd)
+			qb.WriteString(" order by ")
+			qb.WriteString(pivot)
 			qb.WriteString(" LIMIT 10;")
 		} else {
 			qb.WriteString("(SELECT id,pserial,pname,pdesc,quantity FROM products where ")

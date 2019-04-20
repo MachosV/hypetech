@@ -39,7 +39,6 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	offsetBegin := r.FormValue("offset_begin")
 	offsetEnd := r.FormValue("offset_end")
 	query := apiutils.BuildQuery(direction, pivot, offsetBegin, offsetEnd)
-	//fmt.Printf(query.String() + "\n")
 	db := data.GetDbHandler()
 	res, err := db.Query(query)
 	if err != nil {
@@ -63,7 +62,6 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 		productArray = append(productArray, product)
 		minid = id
 		maxid = id
-		fmt.Println(product)
 	}
 	for res.Next() {
 		res.Scan(
@@ -74,7 +72,6 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 			&product.Quantity,
 		)
 		productArray = append(productArray, product)
-		fmt.Println(product)
 		//set metadata for unsorted paging
 		if maxid < id {
 			maxid = id
