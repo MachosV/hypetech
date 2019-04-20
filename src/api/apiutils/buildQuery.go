@@ -1,27 +1,38 @@
 package apiutils
 
-import "strings"
+import (
+	"log"
+	"strings"
+)
 
-func BuildQuery(qb *strings.Builder, direction, pivot, offsetBegin, offsetEnd string) {
+func BuildQuery(direction, pivot, offsetBegin, offsetEnd string) string {
+	qb := strings.Builder{}
 	if direction == "-1" { //first page
 		//ok return a sorted query of the first 10
+		qb.WriteString("SELECT id,pserial,pname,pdesc,quantity FROM products ")
 		qb.WriteString("ORDER BY ")
 		qb.WriteString(pivot)
 		qb.WriteString(" LIMIT 10;")
 	} else {
-		qb.WriteString("WHERE ")
-		qb.WriteString(pivot)
+		qb.WriteString("SELECT id,pserial,pname,pdesc,quantity FROM ")
 		if direction == "1" { //going next
-			qb.WriteString(" > ")
-			qb.WriteString(offsetEnd)
-		} else {
-			qb.WriteString(" < ")
-			qb.WriteString(offsetBegin)
-			qb.WriteString(" and ")
+			qb.WriteString("products where ")
 			qb.WriteString(pivot)
 			qb.WriteString(" > ")
 			qb.WriteString(offsetEnd)
+			qb.WriteString(" LIMIT 10;")
+		} else {
+			qb.WriteString("(SELECT id,pserial,pname,pdesc,quantity FROM products where ")
+			qb.WriteString(pivot)
+			qb.WriteString(" < ")
+			qb.WriteString(offsetBegin)
+			qb.WriteString(" ORDER BY ")
+			qb.WriteString(pivot)
+			qb.WriteString(" DESC LIMIT 10)t ORDER BY ")
+			qb.WriteString(pivot)
+			qb.WriteString(";")
 		}
-		qb.WriteString(" LIMIT 10;")
 	}
+	log.Println(qb.String())
+	return qb.String()
 }

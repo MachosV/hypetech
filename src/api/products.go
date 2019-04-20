@@ -10,7 +10,6 @@ import (
 	"models"
 	"mux"
 	"net/http"
-	"strings"
 )
 
 type Context struct {
@@ -39,12 +38,10 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	pivot := r.FormValue("pivot")
 	offsetBegin := r.FormValue("offset_begin")
 	offsetEnd := r.FormValue("offset_end")
-	query := strings.Builder{}
-	query.WriteString("SELECT id,pserial,pname,pdesc,quantity FROM products ")
-	apiutils.BuildQuery(&query, direction, pivot, offsetBegin, offsetEnd)
-	fmt.Printf(query.String() + "\n")
+	query := apiutils.BuildQuery(direction, pivot, offsetBegin, offsetEnd)
+	//fmt.Printf(query.String() + "\n")
 	db := data.GetDbHandler()
-	res, err := db.Query(query.String())
+	res, err := db.Query(query)
 	if err != nil {
 		log.Println(err)
 		fmt.Fprintf(w, "Error")
@@ -66,6 +63,7 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 		productArray = append(productArray, product)
 		minid = id
 		maxid = id
+		fmt.Println(product)
 	}
 	for res.Next() {
 		res.Scan(
@@ -76,7 +74,7 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 			&product.Quantity,
 		)
 		productArray = append(productArray, product)
-
+		fmt.Println(product)
 		//set metadata for unsorted paging
 		if maxid < id {
 			maxid = id
