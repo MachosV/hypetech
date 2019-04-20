@@ -4,3 +4,4 @@ bin/*
 pkg/*
 src/golang.org/x/tools
 insert1.go
+csv.go

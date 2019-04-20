@@ -1,6 +1,7 @@
 package api
 
 import (
+	"api/apiutils"
 	"data"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"models"
 	"mux"
 	"net/http"
+	"strings"
 )
 
 type Context struct {
@@ -33,8 +35,16 @@ func productHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getProducts(w http.ResponseWriter, r *http.Request) {
+	direction := r.FormValue("direction")
+	pivot := r.FormValue("pivot")
+	offsetBegin := r.FormValue("offset_begin")
+	offsetEnd := r.FormValue("offset_end")
+	query := strings.Builder{}
+	query.WriteString("SELECT id,pserial,pname,pdesc,quantity FROM products ")
+	apiutils.BuildQuery(&query, direction, pivot, offsetBegin, offsetEnd)
+	fmt.Printf(query.String() + "\n")
 	db := data.GetDbHandler()
-	res, err := db.Query("SELECT id,pserial,pname,pdesc,quantity FROM products LIMIT 10;")
+	res, err := db.Query(query.String())
 	if err != nil {
 		log.Println(err)
 		fmt.Fprintf(w, "Error")
@@ -42,8 +52,21 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	}
 	var productArray []models.Product
 	var product models.Product
-	maxid := 0
-	id := 0
+	id := -1
+	maxid := id
+	minid := id
+	if res.Next() {
+		res.Scan(
+			&id,
+			&product.Serial,
+			&product.Name,
+			&product.Description,
+			&product.Quantity,
+		)
+		productArray = append(productArray, product)
+		minid = id
+		maxid = id
+	}
 	for res.Next() {
 		res.Scan(
 			&id,
@@ -53,18 +76,24 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 			&product.Quantity,
 		)
 		productArray = append(productArray, product)
-		if id > maxid {
+
+		//set metadata for unsorted paging
+		if maxid < id {
 			maxid = id
 		}
+		if minid > id {
+			minid = id
+		}
 	}
-	var result Context
-	result.Products = productArray
-	result.Metadata = make(map[string]interface{})
-	result.Metadata["lastid"] = maxid
-	productsJSON, err := json.Marshal(result)
-	fmt.Fprintf(w, "%s", productsJSON)
+	var data Context
+	data.Products = productArray
+	data.Metadata = make(map[string]interface{})
+	data.Metadata["maxid"] = maxid
+	data.Metadata["minid"] = minid
+	JSONdata, err := json.Marshal(data)
+	fmt.Fprintf(w, "%s", JSONdata)
 }
 
 func notHandled(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Error, method not handled")
+	fmt.Fprintf(w, "Method not yet implemented")
 }
