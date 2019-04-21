@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func BuildQuery(direction, pivot, offsetBegin, offsetEnd string) string {
+func BuildQuery(direction, pivot, offsetBegin, offsetEnd,searchTerm string) string {
 	qb := strings.Builder{}
 	if direction == "-1" { //first page
 		//ok return a sorted query of the first 10
@@ -18,17 +18,17 @@ func BuildQuery(direction, pivot, offsetBegin, offsetEnd string) string {
 		if direction == "1" { //going next
 			qb.WriteString("products where ")
 			qb.WriteString(pivot)
-			qb.WriteString(" > ")
+			qb.WriteString(" > \"")
 			qb.WriteString(offsetEnd)
-			qb.WriteString(" order by ")
+			qb.WriteString("\" order by ")
 			qb.WriteString(pivot)
 			qb.WriteString(" LIMIT 10;")
 		} else {
 			qb.WriteString("(SELECT id,pserial,pname,pdesc,quantity FROM products where ")
 			qb.WriteString(pivot)
-			qb.WriteString(" < ")
+			qb.WriteString(" < \"")
 			qb.WriteString(offsetBegin)
-			qb.WriteString(" ORDER BY ")
+			qb.WriteString("\" ORDER BY ")
 			qb.WriteString(pivot)
 			qb.WriteString(" DESC LIMIT 10)t ORDER BY ")
 			qb.WriteString(pivot)

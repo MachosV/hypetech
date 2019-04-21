@@ -9,13 +9,14 @@ var maxid
 var minid
 var first
 var last
-
+var searchTermLocal = ""
+var timeout = null
 
 $ (document ).ready(sortDetector());
 $( document ).ready(loadData());
 $( document ).ready(prevDetector());
 $( document ).ready(nextDetector());
-
+$( document ).ready(searchDetect());
 
 function loadData() {
   $.get("/products",{
@@ -23,7 +24,8 @@ function loadData() {
     "offset_begin": offset_begin, 
     "offset_end": offset_end,
     "direction": direction,
-    "pivot": pivot
+    "pivot": pivot,
+    "searchTerm": searchTermLocal
   },
   function(data,status){
     objects = $.parseJSON(data);
@@ -41,19 +43,24 @@ function loadData() {
     getFirstAndLast()
     maxid = objects.metadata.maxid
     minid = objects.metadata.minid
-    console.log(minid,maxid)
   });
 }
 
 function sortDetector(){
   $('#customSwitch').change(function() {
     if ((this).checked){
-      sort = true
       pivot = "pserial"
+      sort = true
     }else{
-      sort = false
       pivot = "id"
+      sort = false
     }
+    direction = -1
+    maxid = "";
+    minid = "";
+    first = ""
+    last = ""
+    page = 0;
     loadData()       
   })
 }
@@ -97,4 +104,23 @@ function nextDetector(){
     }
     loadData()
   }); 
+}
+
+function searchDetect(){
+  $(document).on('input','#search',function () { 
+    searchTermLocal = $('#search').val();
+    if (searchTermLocal.length < 3){
+      searchTerm = ""
+      return
+    }
+    else{
+      if (timeout) {  
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(function() {
+        console.log(searchTermLocal) 
+        loadData(); //this is your existing function
+      }, 2000);
+    }
+   });
 }
