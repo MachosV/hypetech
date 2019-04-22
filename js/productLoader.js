@@ -109,6 +109,16 @@ function nextDetector(){
 function searchDetect(){
   $(document).on('input','#search',function () { 
     searchTermLocal = $('#search').val();
+    if (searchTermLocal.length === 0){
+      minid = ""
+      maxid = ""
+      first = ""
+      last = ""
+      pivot = "id"
+      sort = false
+      console.log("nil")
+      loadData()
+    }
     if (searchTermLocal.length < 3){
       searchTerm = ""
       return
@@ -118,8 +128,11 @@ function searchDetect(){
         clearTimeout(timeout);
       }
       timeout = setTimeout(function() {
-        console.log(searchTermLocal) 
-        loadData(); //this is your existing function
+        pivot = "pserial"
+        sort = true 
+        offset_begin = first
+        offset_end = last
+        loadData();
       }, 2000);
     }
    });

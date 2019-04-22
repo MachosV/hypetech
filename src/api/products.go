@@ -38,7 +38,8 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	pivot := r.FormValue("pivot")
 	offsetBegin := r.FormValue("offset_begin")
 	offsetEnd := r.FormValue("offset_end")
-	query := apiutils.BuildQuery(direction, pivot, offsetBegin, offsetEnd)
+	searchTerm := r.FormValue("searchTerm")
+	query := apiutils.BuildQuery(direction, pivot, offsetBegin, offsetEnd, searchTerm)
 	db := data.GetDbHandler()
 	res, err := db.Query(query)
 	if err != nil {
